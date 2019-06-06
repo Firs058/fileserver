@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.PostConstruct;
+
 @Service
 public class StorageServiceImpl implements StorageService {
 
@@ -38,6 +40,7 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
+    @PostConstruct
     public void init() {
         try {
             Files.createDirectories(uploadPath);
