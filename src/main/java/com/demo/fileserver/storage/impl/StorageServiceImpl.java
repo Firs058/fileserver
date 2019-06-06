@@ -3,7 +3,6 @@ package com.demo.fileserver.storage.impl;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -29,6 +28,8 @@ public class StorageServiceImpl implements StorageService {
 
     @Value("${paths.upload}")
     private Path uploadPath;
+    @Value("${hz.instance.name}")
+    private String instanceName;
     private final FilesRepository filesRepository;
 
     @Autowired
@@ -57,12 +58,13 @@ public class StorageServiceImpl implements StorageService {
             }
             try (InputStream inputStream = multipartFile.getInputStream()) {
                 FileEntity fileEntity = new FileEntity()
+                        .node(instanceName)
                         .fileName(multipartFile.getOriginalFilename())
                         .path(uploadPath.toString())
                         .mimeType(multipartFile.getContentType())
                         .fileSize(multipartFile.getSize());
-                filesRepository.save(fileEntity);
-                Files.copy(inputStream, this.uploadPath.resolve(filename), StandardCopyOption.REPLACE_EXISTING);
+                FileEntity saved = filesRepository.save(fileEntity);
+                Files.copy(inputStream, this.uploadPath.resolve(saved.id + "_" + filename), StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
             throw new StorageException("File save error" + filename, e);
@@ -70,41 +72,8 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
-    public Path loadByFilename(String filename) {
-        return filesRepository.findByFileName(filename)
-                .map(u -> uploadPath.resolve(filename))
-                .orElseThrow(() -> new StorageException("Files read error"));
-    }
-
-
-    @Override
-    public Path loadById(UUID id) {
-        return filesRepository.findById(id)
-                .map(u -> uploadPath.resolve(u.fileName()))
-                .orElseThrow(() -> new StorageException("Files read error"));
-    }
-
-    @Override
-    public Resource loadAsResourceByUUID(UUID id) {
-        return loadFile(loadById(id));
-    }
-
-    @Override
-    public Resource loadAsResourceByFilename(String filename) {
-        return loadFile(loadByFilename(filename));
-    }
-
-    @Override
-    public void deleteAll() {
-        filesRepository.findAll().forEach(this::deleteFile);
-    }
-
-    @Override
-    public void deleteByUUID(UUID id) {
-        filesRepository.findById(id).ifPresent(this::deleteFile);
-    }
-
-    private Resource loadFile(Path path) {
+    public Resource loadAsResource(FileEntity fileEntity) {
+        Path path = uploadPath.resolve(fileEntity.savedName());
         try {
             Resource resource = new UrlResource(path.toUri());
             if (resource.exists() || resource.isReadable()) {
@@ -112,16 +81,20 @@ public class StorageServiceImpl implements StorageService {
             } else {
                 throw new StorageFileNotFoundException("File read error: " + path);
             }
-        } catch (MalformedURLException e) {
+        } catch (IOException e) {
             throw new StorageFileNotFoundException("File read error: " + path);
         }
     }
 
-    private void deleteFile(FileEntity fileEntity){
-        File fileToDelete = new File(Paths.get(fileEntity.path(), fileEntity.fileName()).toUri());
-        boolean deleted = fileToDelete.delete();
-        if (deleted) {
-            filesRepository.delete(fileEntity);
-        }
+    @Override
+    public void deleteByUUID(UUID id) {
+        filesRepository.findById(id)
+                .ifPresent(fileEntity -> {
+                    File fileToDelete = new File(Paths.get(fileEntity.path(), fileEntity.savedName()).toUri());
+                    boolean deleted = fileToDelete.delete();
+                    if (deleted) {
+                        filesRepository.delete(fileEntity);
+                    }
+                });
     }
 }

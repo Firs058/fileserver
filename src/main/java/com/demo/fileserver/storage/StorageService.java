@@ -1,9 +1,9 @@
 package com.demo.fileserver.storage;
 
+import com.demo.fileserver.entity.FileEntity;
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Path;
 import java.util.UUID;
 
 public interface StorageService {
@@ -12,15 +12,7 @@ public interface StorageService {
 
     void save(MultipartFile file);
 
-    Path loadByFilename(String filename);
-
-    Path loadById(UUID id);
-
-    Resource loadAsResourceByUUID(UUID id);
-
-    Resource loadAsResourceByFilename(String filename);
-
-    void deleteAll();
+    Resource loadAsResource(FileEntity fileEntity);
 
     void deleteByUUID(UUID id);
 }

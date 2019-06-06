@@ -10,6 +10,8 @@ import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
 
@@ -34,6 +36,8 @@ public class FileEntity implements Serializable {
     public UUID id;
     @Column(columnDefinition = "text", nullable = false)
     public String path;
+    @Column(columnDefinition = "text", nullable = false)
+    public String node;
     @Column(name = "file_name", columnDefinition = "text", nullable = false)
     public String fileName;
     @Column(name = "mime_type", columnDefinition = "text", nullable = false)
@@ -44,5 +48,11 @@ public class FileEntity implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "date_added", columnDefinition = "timestamp with time zone", nullable = false)
     public Date dateAdded;
-}
+    @Transient
+    private String savedName;
 
+    @PostLoad
+    private void onLoad() {
+        this.savedName = this.id + "_" + this.fileName;
+    }
+}
