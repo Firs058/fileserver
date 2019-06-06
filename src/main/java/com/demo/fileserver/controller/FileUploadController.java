@@ -81,7 +81,7 @@ public class FileUploadController {
                 .map(fileEntity -> {
                     if (fileEntity.node.equals(instanceName)) {
                         Resource file = storageService.loadAsResource(fileEntity);
-                        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"").body(file);
+                        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileEntity.fileName + "\"").body(file);
                     } else {
                         IMap<Object, Object> cluster = hazelcastInstance.getMap("cluster-info");
                         ClusterMember node = (ClusterMember) cluster.get(fileEntity.node);
@@ -98,7 +98,7 @@ public class FileUploadController {
                 .map(fileEntity -> {
                     if (fileEntity.node.equals(instanceName)) {
                         Resource file = storageService.loadAsResource(fileEntity);
-                        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"").body(file);
+                        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileEntity.fileName + "\"").body(file);
                     } else {
                         IMap<Object, Object> cluster = hazelcastInstance.getMap("cluster-info");
                         ClusterMember node = (ClusterMember) cluster.get(fileEntity.node);
